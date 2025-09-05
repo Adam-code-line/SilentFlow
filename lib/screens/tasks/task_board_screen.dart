@@ -957,7 +957,6 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
       MaterialPageRoute(
         builder: (context) => WorkflowScreen(
           teamId: selectedTeam.id,
-          teamName: selectedTeam.name,
         ),
       ),
     );
