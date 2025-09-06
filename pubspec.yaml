@@ -32,7 +32,7 @@ dependencies:
     sdk: flutter
   
   # 状态管理
-  provider: ^6.1.1
+  provider: ^6.1.2
   
   # 网络请求
   http: ^1.1.0
@@ -46,6 +46,18 @@ dependencies:
   
   # UI组件
   cupertino_icons: ^1.0.2
+  
+  # 美化相关库
+  flutter_svg: ^2.0.10         # 矢量图标支持
+  animations: ^2.0.11          # 高级动画效果
+  shimmer: ^3.0.0              # 加载骨架屏
+  fluttertoast: ^8.2.4         # 优雅的提示框
+  curved_navigation_bar: ^1.0.6 # 曲线导航栏
+  # neumorphic_container: ^1.0.0 # 拟物风格容器 - 暂时注释，可能版本不匹配
+  lottie: ^2.7.0               # 动态Lottie动画
+  flutter_spinkit: ^5.2.0      # 加载动画
+  auto_size_text: ^3.0.0       # 自适应文本
+  smooth_page_indicator: ^1.1.0 # 平滑指示器
 
 dev_dependencies:
   flutter_test:
