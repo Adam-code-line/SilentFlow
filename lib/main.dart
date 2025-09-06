@@ -4,6 +4,8 @@ import 'providers/app_provider.dart';
 import 'providers/team_pool_provider.dart';
 import 'screens/main_tab_screen.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/team/team_pool_screen.dart';
+import 'screens/developer_tools_screen.dart';
 import 'services/api_service.dart';
 
 void main() async {
@@ -57,6 +59,8 @@ class SilentFlowApp extends StatelessWidget {
             return MainTabScreen(arguments: args);
           },
           '/login': (context) => const LoginScreen(),
+          '/team_pool': (context) => const TeamPoolScreen(),
+          '/developer_tools': (context) => const DeveloperToolsScreen(),
         },
         debugShowCheckedModeBanner: false,
       ),

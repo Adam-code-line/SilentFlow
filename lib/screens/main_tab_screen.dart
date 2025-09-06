@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../providers/team_pool_provider.dart';
 import '../widgets/team_creation_dialog.dart';
+import '../widgets/developer_mode_widgets.dart';
 import 'home/home_screen.dart';
 import 'team/team_pool_screen.dart';
 import 'tasks/task_board_screen.dart';
@@ -100,20 +101,26 @@ class _MainTabScreenState extends State<MainTabScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            stops: const [0.0, 0.3, 1.0],
-            colors: [
-              Colors.indigo[50]!,
-              Colors.white,
-              Colors.white,
-            ],
+      body: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                stops: const [0.0, 0.3, 1.0],
+                colors: [
+                  Colors.indigo[50]!,
+                  Colors.white,
+                  Colors.white,
+                ],
+              ),
+            ),
+            child: _screens[_selectedIndex],
           ),
-        ),
-        child: _screens[_selectedIndex],
+          // 开发者工具浮动按钮
+          const DeveloperModeFloatingButton(),
+        ],
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(

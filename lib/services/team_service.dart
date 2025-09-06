@@ -1,11 +1,19 @@
 // 团队相关的API服务
-// 连接后端团队管理接口
+// 连接后端团队管理接口，支持开发模式模拟
 import 'api_service.dart';
+import 'mock_team_service.dart';
+import '../config/app_config.dart';
 import 'package:dio/dio.dart';
 
 class TeamService {
   // 获取团队信息 - GET /team/get/:teamuid
   static Future<Map<String, dynamic>?> getTeamInfo(String teamId) async {
+    // 检查是否使用模拟数据
+    if (AppConfig.isDevelopmentMode && AppConfig.useMockData) {
+      AppConfig.debugLog('使用模拟数据获取团队信息: $teamId');
+      return await MockTeamService.getTeamInfo(teamId);
+    }
+
     try {
       final response = await ApiService.get('/team/get/$teamId');
 
@@ -30,7 +38,23 @@ class TeamService {
     required String teamId,
     required String teamPassword,
     required String teamLeader,
+    String? teamName,
+    String? description,
+    String? teamType,
   }) async {
+    // 检查是否使用模拟数据
+    if (AppConfig.isDevelopmentMode && AppConfig.useMockData) {
+      AppConfig.debugLog('使用模拟数据创建团队: $teamId');
+      return await MockTeamService.createTeam(
+        teamId: teamId,
+        teamPassword: teamPassword,
+        teamLeader: teamLeader,
+        teamName: teamName,
+        description: description,
+        teamType: teamType,
+      );
+    }
+
     try {
       print('TeamService.createTeam 开始调用...');
       print(
@@ -110,6 +134,15 @@ class TeamService {
     required String teamId,
     required Map<String, dynamic> changedThings,
   }) async {
+    // 检查是否使用模拟数据
+    if (AppConfig.isDevelopmentMode && AppConfig.useMockData) {
+      AppConfig.debugLog('使用模拟数据更新团队: $teamId');
+      return await MockTeamService.updateTeam(
+        teamId: teamId,
+        changedThings: changedThings,
+      );
+    }
+
     try {
       final response = await ApiService.post('/team/updata', data: {
         'teamUID': int.parse(teamId),
@@ -136,6 +169,12 @@ class TeamService {
 
   // 删除团队 - POST /team/delete
   static Future<bool> deleteTeam(String teamId) async {
+    // 检查是否使用模拟数据
+    if (AppConfig.isDevelopmentMode && AppConfig.useMockData) {
+      AppConfig.debugLog('使用模拟数据删除团队: $teamId');
+      return await MockTeamService.deleteTeam(teamId);
+    }
+
     try {
       final response = await ApiService.post('/team/delete', data: {
         'teamUID': int.parse(teamId),
@@ -164,6 +203,15 @@ class TeamService {
     required String teamId,
     required String newPassword,
   }) async {
+    // 检查是否使用模拟数据
+    if (AppConfig.isDevelopmentMode && AppConfig.useMockData) {
+      AppConfig.debugLog('使用模拟数据更新团队密码: $teamId');
+      return await MockTeamService.updateTeamPassword(
+        teamId: teamId,
+        newPassword: newPassword,
+      );
+    }
+
     try {
       final response = await ApiService.post('/team/updatapassword', data: {
         'teamUID': int.parse(teamId),
@@ -186,5 +234,84 @@ class TeamService {
       print('更新团队密码异常: $e');
       return false;
     }
+  }
+
+  // 新增方法：加入团队
+  static Future<bool> joinTeam(String teamId, String userId) async {
+    // 检查是否使用模拟数据
+    if (AppConfig.isDevelopmentMode && AppConfig.useMockData) {
+      AppConfig.debugLog('使用模拟数据加入团队: $userId -> $teamId');
+      return await MockTeamService.joinTeam(teamId, userId);
+    }
+
+    // TODO: 实现真实的API调用
+    print('警告：真实的加入团队API还未实现');
+    return false;
+  }
+
+  // 新增方法：离开团队
+  static Future<bool> leaveTeam(String teamId, String userId) async {
+    // 检查是否使用模拟数据
+    if (AppConfig.isDevelopmentMode && AppConfig.useMockData) {
+      AppConfig.debugLog('使用模拟数据离开团队: $userId <- $teamId');
+      return await MockTeamService.leaveTeam(teamId, userId);
+    }
+
+    // TODO: 实现真实的API调用
+    print('警告：真实的离开团队API还未实现');
+    return false;
+  }
+
+  // 新增方法：获取用户的团队列表
+  static Future<List<Map<String, dynamic>>> getUserTeams(String userId) async {
+    // 检查是否使用模拟数据
+    if (AppConfig.isDevelopmentMode && AppConfig.useMockData) {
+      AppConfig.debugLog('使用模拟数据获取用户团队: $userId');
+      return await MockTeamService.getUserTeams(userId);
+    }
+
+    // TODO: 实现真实的API调用
+    print('警告：真实的获取用户团队API还未实现');
+    return [];
+  }
+
+  // 新增方法：搜索公开团队
+  static Future<List<Map<String, dynamic>>> searchPublicTeams({
+    String? keyword,
+    int limit = 10,
+  }) async {
+    // 检查是否使用模拟数据
+    if (AppConfig.isDevelopmentMode && AppConfig.useMockData) {
+      AppConfig.debugLog('使用模拟数据搜索团队: $keyword');
+      return await MockTeamService.searchPublicTeams(
+        keyword: keyword,
+        limit: limit,
+      );
+    }
+
+    // TODO: 实现真实的API调用
+    print('警告：真实的搜索团队API还未实现');
+    return [];
+  }
+
+  // 新增方法：获取团队统计信息
+  static Future<Map<String, dynamic>> getTeamStatistics(String userId) async {
+    // 检查是否使用模拟数据
+    if (AppConfig.isDevelopmentMode && AppConfig.useMockData) {
+      AppConfig.debugLog('使用模拟数据获取团队统计: $userId');
+      return await MockTeamService.getTeamStatistics(userId);
+    }
+
+    // TODO: 实现真实的API调用
+    print('警告：真实的团队统计API还未实现');
+    return {
+      'totalTeams': 0,
+      'activeTeams': 0,
+      'completedProjects': 0,
+      'totalMembers': 0,
+      'averageTeamSize': 0.0,
+      'leadershipCount': 0,
+      'membershipCount': 0,
+    };
   }
 }

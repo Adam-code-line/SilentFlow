@@ -1,8 +1,23 @@
 // 应用配置常量
 class AppConfig {
+  // 开发模式配置
+  static const bool isDevelopmentMode = true; // 改为false以使用真实后端
+  static const bool useMockData = true; // 是否使用模拟数据
+  static const bool enableDebugLogging = true; // 是否启用调试日志
+
+  // 模拟延迟配置（毫秒）
+  static const int mockApiDelay = 800; // 模拟网络延迟
+  static const int mockLongApiDelay = 1500; // 模拟长时间操作延迟
+
   // API配置
-  static const String baseUrl = 'http://47.95.200.35:8081'; // 更新为新的生产服务器
+  static const String productionBaseUrl = 'http://47.95.200.35:8081'; // 生产服务器
+  static const String developmentBaseUrl = 'http://127.0.0.1:8081'; // 开发服务器
   static const Duration requestTimeout = Duration(seconds: 10);
+
+  // 获取当前使用的基础URL
+  static String get baseUrl => isDevelopmentMode && !useMockData
+      ? developmentBaseUrl
+      : productionBaseUrl;
 
   // 本地存储键名
   static const String userTokenKey = 'user_token';
@@ -14,6 +29,27 @@ class AppConfig {
   static const int timingMatchBonus = 10;
   static const int obstacleReportBonus = 2;
   static const int conflictPenalty = -3;
+
+  // 调试日志函数
+  static void debugLog(String message) {
+    if (enableDebugLogging) {
+      print('[DEBUG] $message');
+    }
+  }
+
+  // 模拟延迟函数
+  static Future<void> mockDelay([int? customDelay]) async {
+    if (isDevelopmentMode && useMockData) {
+      await Future.delayed(Duration(milliseconds: customDelay ?? mockApiDelay));
+    }
+  }
+
+  // 模拟长时间操作延迟
+  static Future<void> mockLongDelay() async {
+    if (isDevelopmentMode && useMockData) {
+      await Future.delayed(Duration(milliseconds: mockLongApiDelay));
+    }
+  }
 
   // UI配置
   static const double cardBorderRadius = 12.0;
