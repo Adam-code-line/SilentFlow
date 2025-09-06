@@ -1,12 +1,12 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import '../../models/team_pool_model.dart';
+import '../../models/task_model.dart';
 
-/// 高级工作流图组件
 class WorkflowGraphView extends StatefulWidget {
   final TeamPool team;
   final bool isEditable;
-  final Function(String)? onTaskTap;
+  final Function(String taskId)? onTaskTap;
 
   const WorkflowGraphView({
     super.key,
@@ -19,353 +19,294 @@ class WorkflowGraphView extends StatefulWidget {
   State<WorkflowGraphView> createState() => _WorkflowGraphViewState();
 }
 
-class _WorkflowGraphViewState extends State<WorkflowGraphView>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  final TransformationController _transformationController =
-      TransformationController();
-
-  // 模拟的任务数据
-  final List<WorkflowNode> _nodes = [];
-  final List<WorkflowEdge> _edges = [];
+class _WorkflowGraphViewState extends State<WorkflowGraphView> {
+  final List<Task> _mockTasks = [];
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
-
-    _generateMockWorkflow();
-    _animationController.forward();
+    _generateMockTasks();
   }
 
-  @override
-  void dispose() {
-    _animationController.dispose();
-    _transformationController.dispose();
-    super.dispose();
-  }
-
-  void _generateMockWorkflow() {
-    // 模拟工作流数据生成
-    _nodes.addAll([
-      WorkflowNode(
-        id: '1',
-        title: '项目启动',
-        status: TaskStatus.completed,
-        position: const Offset(100, 100),
-        assignee: '张三',
-      ),
-      WorkflowNode(
-        id: '2',
+  void _generateMockTasks() {
+    // 为每个团队生成一些模拟任务数据
+    _mockTasks.addAll([
+      Task(
+        id: 'task_1_${widget.team.id}',
         title: '需求分析',
+        description: '分析项目需求和功能点',
         status: TaskStatus.completed,
-        position: const Offset(100, 200),
-        assignee: '李四',
+        priority: TaskPriority.high,
+        assigneeId: widget.team.leaderId,
+        poolId: widget.team.id,
+        statistics: TaskStatistics(
+          actualMinutes: 2400, // 5 days * 8 hours * 60 minutes
+          contributionScore: 100.0,
+          tacitScore: 85.0,
+          collaborationEvents: 12,
+        ),
+        createdAt: DateTime.now().subtract(const Duration(days: 7)),
+        dueDate: DateTime.now().subtract(const Duration(days: 5)),
       ),
-      WorkflowNode(
-        id: '3',
-        title: 'UI设计',
+      Task(
+        id: 'task_2_${widget.team.id}',
+        title: '架构设计',
+        description: '设计系统架构和技术方案',
         status: TaskStatus.inProgress,
-        position: const Offset(300, 150),
-        assignee: '王五',
+        priority: TaskPriority.high,
+        assigneeId: widget.team.memberIds.isNotEmpty
+            ? widget.team.memberIds.first
+            : widget.team.leaderId,
+        poolId: widget.team.id,
+        statistics: TaskStatistics(
+          actualMinutes: 960, // 2 days * 8 hours * 60 minutes
+          contributionScore: 60.0,
+          tacitScore: 55.0,
+          collaborationEvents: 8,
+        ),
+        createdAt: DateTime.now().subtract(const Duration(days: 5)),
+        dueDate: DateTime.now().add(const Duration(days: 2)),
       ),
-      WorkflowNode(
-        id: '4',
-        title: '后端开发',
-        status: TaskStatus.inProgress,
-        position: const Offset(300, 250),
-        assignee: '赵六',
-      ),
-      WorkflowNode(
-        id: '5',
+      Task(
+        id: 'task_3_${widget.team.id}',
         title: '前端开发',
+        description: '实现用户界面和交互逻辑',
         status: TaskStatus.pending,
-        position: const Offset(500, 200),
-        assignee: '钱七',
+        priority: TaskPriority.medium,
+        assigneeId: widget.team.memberIds.length > 1
+            ? widget.team.memberIds[1]
+            : widget.team.leaderId,
+        poolId: widget.team.id,
+        statistics: const TaskStatistics(
+          actualMinutes: 0,
+          contributionScore: 0.0,
+          tacitScore: 0.0,
+          collaborationEvents: 0,
+        ),
+        createdAt: DateTime.now().subtract(const Duration(days: 2)),
+        dueDate: DateTime.now().add(const Duration(days: 5)),
       ),
-      WorkflowNode(
-        id: '6',
-        title: '测试',
+      Task(
+        id: 'task_4_${widget.team.id}',
+        title: '后端开发',
+        description: '实现服务端逻辑和API接口',
         status: TaskStatus.pending,
-        position: const Offset(700, 200),
-        assignee: '孙八',
+        priority: TaskPriority.medium,
+        assigneeId: widget.team.memberIds.length > 2
+            ? widget.team.memberIds[2]
+            : widget.team.leaderId,
+        poolId: widget.team.id,
+        statistics: const TaskStatistics(
+          actualMinutes: 0,
+          contributionScore: 0.0,
+          tacitScore: 0.0,
+          collaborationEvents: 0,
+        ),
+        createdAt: DateTime.now().subtract(const Duration(days: 1)),
+        dueDate: DateTime.now().add(const Duration(days: 7)),
       ),
-      WorkflowNode(
-        id: '7',
-        title: '发布',
+      Task(
+        id: 'task_5_${widget.team.id}',
+        title: '测试验证',
+        description: '进行功能测试和性能优化',
         status: TaskStatus.pending,
-        position: const Offset(900, 200),
-        assignee: '周九',
+        priority: TaskPriority.low,
+        assigneeId: widget.team.leaderId,
+        poolId: widget.team.id,
+        statistics: TaskStatistics(
+          actualMinutes: 0,
+          contributionScore: 0.0,
+          tacitScore: 0.0,
+          collaborationEvents: 0,
+        ),
+        createdAt: DateTime.now(),
+        dueDate: DateTime.now().add(const Duration(days: 10)),
       ),
     ]);
+  }
 
-    _edges.addAll([
-      WorkflowEdge(from: '1', to: '2'),
-      WorkflowEdge(from: '2', to: '3'),
-      WorkflowEdge(from: '2', to: '4'),
-      WorkflowEdge(from: '3', to: '5'),
-      WorkflowEdge(from: '4', to: '5'),
-      WorkflowEdge(from: '5', to: '6'),
-      WorkflowEdge(from: '6', to: '7'),
-    ]);
+  // 计算任务节点位置
+  Offset _getTaskPosition(int index) {
+    final double leftPosition = index * 200.0 + 50;
+    final double topPosition = 100.0 + (index % 2) * 100;
+    return Offset(leftPosition, topPosition);
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.all(16),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(),
+          const SizedBox(height: 20),
           Expanded(
             child: _buildWorkflowGraph(),
           ),
-          _buildFooter(),
         ],
       ),
     );
   }
 
   Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-        border: Border(bottom: BorderSide(color: Colors.grey[200]!)),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.account_tree,
-            color: Colors.indigo[600],
-            size: 24,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${widget.team.name} - 工作流图',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2D3748),
-                  ),
-                ),
-                Text(
-                  '${_nodes.length} 个任务节点，${_edges.length} 个依赖关系',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${widget.team.name} - 工作流程图',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2D3748),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '共 ${_mockTasks.length} 个任务',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+        if (widget.isEditable)
+          ElevatedButton.icon(
+            onPressed: _showAddTaskDialog,
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('添加任务'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4C51BF),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
             ),
           ),
-          _buildZoomControls(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildZoomControls() {
-    return Row(
-      children: [
-        IconButton(
-          onPressed: _zoomIn,
-          icon: const Icon(Icons.zoom_in),
-          iconSize: 20,
-          tooltip: '放大',
-        ),
-        IconButton(
-          onPressed: _zoomOut,
-          icon: const Icon(Icons.zoom_out),
-          iconSize: 20,
-          tooltip: '缩小',
-        ),
-        IconButton(
-          onPressed: _resetZoom,
-          icon: const Icon(Icons.center_focus_strong),
-          iconSize: 20,
-          tooltip: '重置视图',
-        ),
       ],
     );
   }
 
   Widget _buildWorkflowGraph() {
-    return AnimatedBuilder(
-      animation: _fadeAnimation,
-      builder: (context, child) {
-        return Opacity(
-          opacity: _fadeAnimation.value,
-          child: InteractiveViewer(
-            transformationController: _transformationController,
-            constrained: false,
-            boundaryMargin: const EdgeInsets.all(50),
-            minScale: 0.3,
-            maxScale: 3.0,
-            child: Container(
-              width: 1200,
-              height: 600,
-              child: CustomPaint(
-                painter: WorkflowPainter(
-                  nodes: _nodes,
-                  edges: _edges,
-                  animationValue: _fadeAnimation.value,
-                ),
-                child: Stack(
-                  children:
-                      _nodes.map((node) => _buildNodeWidget(node)).toList(),
-                ),
-              ),
-            ),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Container(
+        width: _mockTasks.length * 200.0 + 100,
+        height: double.infinity,
+        child: CustomPaint(
+          painter: WorkflowPainter(
+            tasks: _mockTasks,
+            getTaskPosition: _getTaskPosition,
           ),
-        );
-      },
+          child: Stack(
+            children: _mockTasks.asMap().entries.map((entry) {
+              final index = entry.key;
+              final task = entry.value;
+              return _buildTaskNode(task, index);
+            }).toList(),
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildNodeWidget(WorkflowNode node) {
+  Widget _buildTaskNode(Task task, int index) {
+    final position = _getTaskPosition(index);
+
     return Positioned(
-      left: node.position.dx - 60,
-      top: node.position.dy - 30,
-      child: TweenAnimationBuilder<double>(
-        duration: Duration(milliseconds: 800 + (_nodes.indexOf(node) * 200)),
-        tween: Tween(begin: 0.0, end: 1.0),
-        builder: (context, value, child) {
-          return Transform.scale(
-            scale: value,
-            child: GestureDetector(
-              onTap: () => _handleNodeTap(node),
-              child: Container(
-                width: 120,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: _getStatusColor(node.status),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _getStatusColor(node.status).withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                  border: Border.all(
-                    color: _getStatusColor(node.status).withOpacity(0.5),
-                    width: 2,
+      left: position.dx,
+      top: position.dy,
+      child: GestureDetector(
+        onTap: () => widget.onTaskTap?.call(task.id),
+        child: Container(
+          width: 140,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: _getTaskColor(task.status),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _getTaskBorderColor(task.status),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    _getTaskIcon(task.status),
+                    size: 16,
+                    color: _getTaskIconColor(task.status),
                   ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      node.title,
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      task.title,
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      node.assignee,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ),
-          );
-        },
+              const SizedBox(height: 8),
+              Text(
+                task.description ?? '',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.white.withOpacity(0.9),
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 8),
+              _buildPriorityChip(task.priority),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildFooter() {
+  Widget _buildPriorityChip(TaskPriority priority) {
+    final color = _getPriorityColor(priority);
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
-        border: Border(top: BorderSide(color: Colors.grey[200]!)),
+        color: color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color, width: 1),
       ),
-      child: Row(
-        children: [
-          _buildLegendItem(TaskStatus.completed, '已完成'),
-          const SizedBox(width: 16),
-          _buildLegendItem(TaskStatus.inProgress, '进行中'),
-          const SizedBox(width: 16),
-          _buildLegendItem(TaskStatus.pending, '待处理'),
-          const SizedBox(width: 16),
-          _buildLegendItem(TaskStatus.blocked, '受阻'),
-          const Spacer(),
-          Text(
-            '双击节点查看详情 • 拖拽缩放查看全局',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-          ),
-        ],
+      child: Text(
+        _getPriorityText(priority),
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
       ),
     );
   }
 
-  Widget _buildLegendItem(TaskStatus status, String label) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: _getStatusColor(status),
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[700],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Color _getStatusColor(TaskStatus status) {
+  Color _getTaskColor(TaskStatus status) {
     switch (status) {
       case TaskStatus.pending:
         return const Color(0xFFF6AD55);
@@ -378,165 +319,122 @@ class _WorkflowGraphViewState extends State<WorkflowGraphView>
     }
   }
 
-  void _handleNodeTap(WorkflowNode node) {
-    if (widget.onTaskTap != null) {
-      widget.onTaskTap!(node.id);
-    } else {
-      _showNodeDetails(node);
+  Color _getTaskBorderColor(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.pending:
+        return const Color(0xFFED8936);
+      case TaskStatus.inProgress:
+        return const Color(0xFF3182CE);
+      case TaskStatus.completed:
+        return const Color(0xFF38A169);
+      case TaskStatus.blocked:
+        return const Color(0xFFE53E3E);
     }
   }
 
-  void _showNodeDetails(WorkflowNode node) {
+  IconData _getTaskIcon(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.pending:
+        return Icons.schedule;
+      case TaskStatus.inProgress:
+        return Icons.play_circle_filled;
+      case TaskStatus.completed:
+        return Icons.check_circle;
+      case TaskStatus.blocked:
+        return Icons.block;
+    }
+  }
+
+  Color _getTaskIconColor(TaskStatus status) {
+    return Colors.white;
+  }
+
+  Color _getPriorityColor(TaskPriority priority) {
+    switch (priority) {
+      case TaskPriority.low:
+        return Colors.green;
+      case TaskPriority.medium:
+        return Colors.orange;
+      case TaskPriority.high:
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getPriorityText(TaskPriority priority) {
+    switch (priority) {
+      case TaskPriority.low:
+        return '低';
+      case TaskPriority.medium:
+        return '中';
+      case TaskPriority.high:
+        return '高';
+      default:
+        return '未知';
+    }
+  }
+
+  void _showAddTaskDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(node.title),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('状态: ${_getStatusText(node.status)}'),
-            Text('负责人: ${node.assignee}'),
-            const SizedBox(height: 16),
-            Text(
-              '任务详情：',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            Text('这里是任务的详细描述信息...'),
-          ],
-        ),
+        title: const Text('添加新任务'),
+        content: const Text('任务创建功能开发中...'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('关闭'),
+            child: const Text('取消'),
           ),
-          if (widget.isEditable)
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _editNode(node);
-              },
-              child: const Text('编辑'),
-            ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('功能开发中，敬请期待！')),
+              );
+            },
+            child: const Text('确定'),
+          ),
         ],
       ),
     );
   }
-
-  String _getStatusText(TaskStatus status) {
-    switch (status) {
-      case TaskStatus.pending:
-        return '待处理';
-      case TaskStatus.inProgress:
-        return '进行中';
-      case TaskStatus.completed:
-        return '已完成';
-      case TaskStatus.blocked:
-        return '受阻';
-    }
-  }
-
-  void _editNode(WorkflowNode node) {
-    // TODO: 实现节点编辑功能
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('编辑功能开发中...')),
-    );
-  }
-
-  void _zoomIn() {
-    final currentScale = _transformationController.value.getMaxScaleOnAxis();
-    if (currentScale < 3.0) {
-      _transformationController.value *= Matrix4.identity()..scale(1.2);
-    }
-  }
-
-  void _zoomOut() {
-    final currentScale = _transformationController.value.getMaxScaleOnAxis();
-    if (currentScale > 0.3) {
-      _transformationController.value *= Matrix4.identity()..scale(0.8);
-    }
-  }
-
-  void _resetZoom() {
-    _transformationController.value = Matrix4.identity();
-  }
 }
 
-/// 工作流节点数据模型
-class WorkflowNode {
-  final String id;
-  final String title;
-  final TaskStatus status;
-  final Offset position;
-  final String assignee;
-
-  WorkflowNode({
-    required this.id,
-    required this.title,
-    required this.status,
-    required this.position,
-    required this.assignee,
-  });
-}
-
-/// 工作流边数据模型
-class WorkflowEdge {
-  final String from;
-  final String to;
-
-  WorkflowEdge({
-    required this.from,
-    required this.to,
-  });
-}
-
-/// 任务状态枚举
-enum TaskStatus {
-  pending,
-  inProgress,
-  completed,
-  blocked,
-}
-
-/// 自定义画布绘制工作流图
 class WorkflowPainter extends CustomPainter {
-  final List<WorkflowNode> nodes;
-  final List<WorkflowEdge> edges;
-  final double animationValue;
+  final List<Task> tasks;
+  final Offset Function(int index) getTaskPosition;
 
   WorkflowPainter({
-    required this.nodes,
-    required this.edges,
-    required this.animationValue,
+    required this.tasks,
+    required this.getTaskPosition,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    // 绘制连接线
+    // 绘制任务节点连接线
     final linePaint = Paint()
-      ..color = Colors.grey[400]!
+      ..color = Colors.grey[300]!
       ..strokeWidth = 2.0
       ..style = PaintingStyle.stroke;
 
     final arrowPaint = Paint()
-      ..color = Colors.grey[500]!
+      ..color = Colors.grey[400]!
       ..style = PaintingStyle.fill;
 
-    for (final edge in edges) {
-      final fromNode = nodes.firstWhere((node) => node.id == edge.from);
-      final toNode = nodes.firstWhere((node) => node.id == edge.to);
+    for (int i = 0; i < tasks.length - 1; i++) {
+      final fromPosition = getTaskPosition(i);
+      final toPosition = getTaskPosition(i + 1);
 
-      final start = fromNode.position;
-      final end = toNode.position;
+      // 计算连线的起点和终点
+      final fromOffset = Offset(fromPosition.dx + 70, fromPosition.dy + 30);
+      final toOffset = Offset(toPosition.dx + 70, toPosition.dy);
 
-      // 绘制连接线
-      final animatedEnd = Offset.lerp(start, end, animationValue)!;
-      canvas.drawLine(start, animatedEnd, linePaint);
+      // 绘制连线
+      canvas.drawLine(fromOffset, toOffset, linePaint);
 
       // 绘制箭头
-      if (animationValue > 0.7) {
-        _drawArrow(canvas, start, animatedEnd, arrowPaint);
-      }
+      _drawArrow(canvas, fromOffset, toOffset, arrowPaint);
     }
   }
 

@@ -24,6 +24,7 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
   bool _isLoading = true;
   String _searchQuery = '';
   TaskStatus? _filterStatus;
+  TeamPoolProvider? _teamPoolProvider; // 添加引用变量
 
   @override
   void initState() {
@@ -35,16 +36,15 @@ class _TaskBoardScreenState extends State<TaskBoardScreen>
       _loadTasks();
 
       // 监听团队池变化，自动刷新任务
-      final teamPoolProvider = context.read<TeamPoolProvider>();
-      teamPoolProvider.addListener(_onTeamPoolChanged);
+      _teamPoolProvider = context.read<TeamPoolProvider>();
+      _teamPoolProvider!.addListener(_onTeamPoolChanged);
     });
   }
 
   @override
   void dispose() {
-    // 🆕 移除监听器
-    final teamPoolProvider = context.read<TeamPoolProvider>();
-    teamPoolProvider.removeListener(_onTeamPoolChanged);
+    // 🆕 安全移除监听器
+    _teamPoolProvider?.removeListener(_onTeamPoolChanged);
     _tabController.dispose();
     super.dispose();
   }

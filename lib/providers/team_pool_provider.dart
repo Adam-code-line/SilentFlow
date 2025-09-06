@@ -268,8 +268,18 @@ class TeamPoolProvider with ChangeNotifier {
   Future<List<TeamPool>> getUserTeams(String userId) async {
     try {
       print('获取用户团队: $userId');
-      await Future.delayed(const Duration(milliseconds: 300));
-      return [];
+      print('当前团队池数量: ${_teamPools.length}');
+
+      // 使用同步方法获取数据
+      final userTeams = getUserTeamsSync(userId);
+      print('找到用户团队数量: ${userTeams.length}');
+
+      for (var team in userTeams) {
+        print('团队: ${team.name} (ID: ${team.id})');
+      }
+
+      await Future.delayed(const Duration(milliseconds: 100));
+      return userTeams;
     } catch (e) {
       print('获取用户团队失败: $e');
       return [];
