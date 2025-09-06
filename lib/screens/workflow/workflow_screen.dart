@@ -3,7 +3,8 @@ import 'package:provider/provider.dart';
 import '../../models/team_pool_model.dart';
 import '../../providers/app_provider.dart';
 import '../../providers/team_pool_provider.dart';
-import '../../widgets/workflow_graph/mock_workflow_view.dart';
+import '../../providers/enhanced_workflow_provider.dart';
+import '../../widgets/workflow_graph/enhanced_workflow_view.dart';
 
 /// 高级工作流图页面
 class WorkflowScreen extends StatefulWidget {
@@ -194,10 +195,14 @@ class _WorkflowScreenState extends State<WorkflowScreen>
                 child: Padding(
                   padding: EdgeInsets.symmetric(
                       horizontal: isSmallScreen ? 8.0 : 16.0),
-                  child: MockWorkflowView(
-                    team: team,
-                    isEditable: team.leaderId == currentUserId,
-                    onTaskTap: (taskId) => _handleTaskTap(taskId, team),
+                  child: ChangeNotifierProvider(
+                    create: (_) => EnhancedWorkflowProvider()
+                      ..initializeTeamTasks(team.id),
+                    child: EnhancedWorkflowView(
+                      team: team,
+                      isEditable: team.leaderId == currentUserId,
+                      onTaskTap: (taskId) => _handleTaskTap(taskId, team),
+                    ),
                   ),
                 ),
               ),
