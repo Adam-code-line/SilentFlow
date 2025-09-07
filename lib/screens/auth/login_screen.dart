@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_provider.dart';
 
@@ -18,6 +18,11 @@ class _LoginScreenState extends State<LoginScreen>
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLogin = true;
+
+  // 键盘导航相关
+  final _usernameFocusNode = FocusNode();
+  final _passwordFocusNode = FocusNode();
+  final _formFocusNode = FocusNode();
 
   // 3D交互相关状态
   double _rotationX = 0.0;
@@ -82,6 +87,9 @@ class _LoginScreenState extends State<LoginScreen>
   void dispose() {
     _usernameController.dispose();
     _passwordController.dispose();
+    _usernameFocusNode.dispose();
+    _passwordFocusNode.dispose();
+    _formFocusNode.dispose();
     _tiltController.dispose();
     _scaleController.dispose();
     _rippleController.dispose();
@@ -138,54 +146,105 @@ class _LoginScreenState extends State<LoginScreen>
     });
   }
 
+  // 键盘事件处理
+  void _handleKeyEvent(KeyEvent event) {
+    if (event is KeyDownEvent) {
+      switch (event.logicalKey) {
+        case LogicalKeyboardKey.arrowDown:
+          _focusNext();
+          break;
+        case LogicalKeyboardKey.arrowUp:
+          _focusPrevious();
+          break;
+        case LogicalKeyboardKey.enter:
+          _handleSubmit();
+          break;
+        case LogicalKeyboardKey.tab:
+          if (HardwareKeyboard.instance.isShiftPressed) {
+            _focusPrevious();
+          } else {
+            _focusNext();
+          }
+          break;
+      }
+    }
+  }
+
+  // 焦点向下移动
+  void _focusNext() {
+    if (_usernameFocusNode.hasFocus) {
+      FocusScope.of(context).requestFocus(_passwordFocusNode);
+    } else if (_passwordFocusNode.hasFocus) {
+      FocusScope.of(context).requestFocus(_usernameFocusNode);
+    } else {
+      FocusScope.of(context).requestFocus(_usernameFocusNode);
+    }
+  }
+
+  // 焦点向上移动
+  void _focusPrevious() {
+    if (_passwordFocusNode.hasFocus) {
+      FocusScope.of(context).requestFocus(_usernameFocusNode);
+    } else if (_usernameFocusNode.hasFocus) {
+      FocusScope.of(context).requestFocus(_passwordFocusNode);
+    } else {
+      FocusScope.of(context).requestFocus(_passwordFocusNode);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          // 动态渐变背景
-          AnimatedContainer(
-            duration: const Duration(seconds: 10),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.indigo[300]!,
-                  Colors.purple[400]!,
-                  Colors.pink[300]!,
-                  Colors.orange[300]!,
-                ],
-              ),
-            ),
-          ),
-
-          // 浮动粒子效果背景
-          ...List.generate(20, (index) => _buildFloatingParticle(index)),
-
-          SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Logo区域
-                    _buildLogoSection(),
-                    const SizedBox(height: 40),
-
-                    // 3D液态玻璃登录卡片
-                    _build3DGlassCard(),
-                    const SizedBox(height: 24),
-
-                    // 底部提示
-                    _buildFooterText(),
+    return KeyboardListener(
+      focusNode: _formFocusNode,
+      autofocus: true,
+      onKeyEvent: _handleKeyEvent,
+      child: Scaffold(
+        body: Stack(
+          children: [
+            // 动态渐变背景
+            AnimatedContainer(
+              duration: const Duration(seconds: 10),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.indigo[300]!,
+                    Colors.purple[400]!,
+                    Colors.pink[300]!,
+                    Colors.orange[300]!,
                   ],
                 ),
               ),
             ),
-          ),
-        ],
+
+            // 浮动粒子效果背景
+            ...List.generate(20, (index) => _buildFloatingParticle(index)),
+
+            SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Logo区域
+                      _buildLogoSection(),
+                      const SizedBox(height: 40),
+
+                      // 3D液态玻璃登录卡片
+                      _build3DGlassCard(),
+                      const SizedBox(height: 24),
+
+                      // 底部提示
+                      _buildFooterText(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -378,9 +437,14 @@ class _LoginScreenState extends State<LoginScreen>
           // 用户名输入框
           _buildGlassTextField(
             controller: _usernameController,
+            focusNode: _usernameFocusNode,
             label: '用户名',
             hint: '请输入用户名',
             icon: Icons.person_outline,
+            onFieldSubmitted: () {
+              // 用户名输入完成后，焦点移动到密码框
+              FocusScope.of(context).requestFocus(_passwordFocusNode);
+            },
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return '请输入用户名';
@@ -396,10 +460,15 @@ class _LoginScreenState extends State<LoginScreen>
           // 密码输入框
           _buildGlassTextField(
             controller: _passwordController,
+            focusNode: _passwordFocusNode,
             label: '密码',
             hint: '请输入密码',
             icon: Icons.lock_outline,
             obscureText: true,
+            onFieldSubmitted: () {
+              // 密码输入完成后，直接提交表单
+              _handleSubmit();
+            },
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return '请输入密码';
@@ -523,8 +592,10 @@ class _LoginScreenState extends State<LoginScreen>
     required String label,
     required String hint,
     required IconData icon,
+    required FocusNode focusNode,
     bool obscureText = false,
     String? Function(String?)? validator,
+    VoidCallback? onFieldSubmitted,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -539,9 +610,18 @@ class _LoginScreenState extends State<LoginScreen>
       ),
       child: TextFormField(
         controller: controller,
+        focusNode: focusNode,
         obscureText: obscureText,
         validator: validator,
         style: const TextStyle(color: Colors.white),
+        onFieldSubmitted: (value) {
+          if (onFieldSubmitted != null) {
+            onFieldSubmitted();
+          } else {
+            // 默认行为：提交表单
+            _handleSubmit();
+          }
+        },
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(color: Colors.white70),

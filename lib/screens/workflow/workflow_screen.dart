@@ -445,7 +445,12 @@ class _WorkflowScreenState extends State<WorkflowScreen>
             ),
             const SizedBox(height: 32),
             ElevatedButton.icon(
-              onPressed: () => Navigator.of(context).pushNamed('/team_pool'),
+              onPressed: () {
+                // 切换到团队池标签页，而不是打开新界面
+                // 通过导航到主界面并指定团队池标签索引
+                Navigator.of(context)
+                    .pushReplacementNamed('/main', arguments: 1); // 1 是团队池的索引
+              },
               icon: const Icon(Icons.add),
               label: const Text('管理团队'),
               style: ElevatedButton.styleFrom(
