@@ -11,11 +11,11 @@ import 'package:auto_size_text/auto_size_text.dart';
 
 import '../../models/team_pool_model.dart';
 import '../../providers/team_pool_provider.dart';
-import '../../widgets/team_creation_dialog.dart';
+import '../../widgets/dialogs/team_creation_dialog.dart';
 
 // 导入组件模块
-import 'widgets/current_team_card.dart';
-import 'widgets/no_team_card.dart';
+import '../../widgets/team/current_team_card.dart';
+import '../../widgets/team/no_team_card.dart';
 import 'tabs/my_teams_tab.dart';
 import 'tabs/discover_teams_tab.dart';
 import 'tabs/team_stats_tab.dart';

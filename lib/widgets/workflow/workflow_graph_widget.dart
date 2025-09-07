@@ -6,7 +6,6 @@ import '../../providers/enhanced_workflow_provider.dart';
 import 'components/workflow_canvas.dart';
 import 'components/task_node_widget.dart';
 import 'components/task_dialogs.dart';
-import 'components/connection_painter.dart';
 
 /// 增强版工作流图组件 - 支持交互、拖拽、编辑等高级功能
 class EnhancedWorkflowView extends StatefulWidget {
@@ -31,8 +30,6 @@ class _EnhancedWorkflowViewState extends State<EnhancedWorkflowView>
   late AnimationController _rippleController;
   String? _hoveredTaskId;
   String? _selectedTaskId;
-  String? _draggingTaskId;
-  Offset? _dragOffset;
   bool _showConnectionMode = false;
   String? _connectionFromTaskId;
 
@@ -365,157 +362,46 @@ class _EnhancedWorkflowViewState extends State<EnhancedWorkflowView>
   Widget _buildInteractiveWorkflowGraph(EnhancedWorkflowProvider provider) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final canvasSize = Size(constraints.maxWidth, constraints.maxHeight);
-
         return WorkflowCanvas(
           tasks: provider.filteredTasks,
-          taskBuilder: (task, index) =>
-              _buildDraggableTaskNode(task, index, provider, canvasSize),
-          connectionPainter: ConnectionPainter(
-            tasks: provider.filteredTasks,
-            getTaskPosition: provider.getTaskPosition,
-            animationValue: _animationController.value,
-          ),
-          onTaskPositionUpdate: (taskId, constrainedPosition) {
-            provider.setTaskPosition(taskId, constrainedPosition,
-                canvasSize: canvasSize);
+          onTaskTap: (taskId) {
+            final task =
+                provider.filteredTasks.firstWhere((t) => t.id == taskId);
+            _handleTaskTap(task, provider);
           },
+          onTaskMoved: widget.isEditable
+              ? (taskId, position) {
+                  // provider.setTaskPosition(taskId, position);
+                }
+              : null,
+          taskBuilder: (task) => _buildTaskNodeWidget(task, provider),
+          isEditable: widget.isEditable,
         );
       },
     );
   }
 
-  Widget _buildDraggableTaskNode(EnhancedTaskNode task, int index,
-      EnhancedWorkflowProvider provider, Size canvasSize) {
-    final position = provider.getTaskPosition(task.id);
-    final isDragging = _draggingTaskId == task.id;
+  Widget _buildTaskNodeWidget(
+      EnhancedTaskNode task, EnhancedWorkflowProvider provider) {
     final isHovered = _hoveredTaskId == task.id;
     final isSelected = _selectedTaskId == task.id;
-    final isConnectionMode = _showConnectionMode;
 
-    return Positioned(
-      left: position.dx +
-          (_draggingTaskId == task.id ? (_dragOffset?.dx ?? 0) : 0),
-      top: position.dy +
-          (_draggingTaskId == task.id ? (_dragOffset?.dy ?? 0) : 0),
-      child: Stack(
-        children: [
-          TaskNodeWidget(
-            task: task,
-            isDragging: isDragging,
-            isHovered: isHovered,
-            isSelected: isSelected,
-            isConnectionMode: isConnectionMode,
-            connectionFromTaskId: _connectionFromTaskId,
-            onTap: () => _handleTaskTap(task, provider),
-            onDoubleTap: () => _handleTaskDoubleTap(task, provider),
-            onPanStart:
-                widget.isEditable ? (details) => _startDragging(task.id) : null,
-            onPanUpdate: widget.isEditable
-                ? (details) => _updateDragging(details.delta)
-                : null,
-            onPanEnd: widget.isEditable
-                ? (details) => _endDragging(task.id, provider, canvasSize)
-                : null,
-            onHover: (isHovering) =>
-                setState(() => _hoveredTaskId = isHovering ? task.id : null),
-          ),
-          // 悬停详情层
-          if (isHovered) _buildHoverDetails(task, provider),
-        ],
-      ),
+    return TaskNodeWidget(
+      task: task,
+      isSelected: isSelected,
+      isHovered: isHovered,
+      onTap: () => _handleTaskTap(task, provider),
+      onEdit:
+          widget.isEditable ? () => _showEditTaskDialog(task, provider) : null,
+      onDelete:
+          widget.isEditable ? () => _handleDeleteTask(task, provider) : null,
     );
   }
 
-  Widget _buildHoverDetails(
+  void _handleDeleteTask(
       EnhancedTaskNode task, EnhancedWorkflowProvider provider) {
-    return Positioned(
-      left: 220, // 显示在任务卡片右侧
-      top: 0,
-      child: Material(
-        elevation: 8,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          width: 280,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    _getTaskIcon(task.status),
-                    size: 20,
-                    color: _getTaskColor(task.status),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      task.title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2D3748),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                task.description,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey[600],
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  _buildDetailChip('优先级', _getPriorityText(task.priority)),
-                  const SizedBox(width: 8),
-                  _buildDetailChip('进度', '${task.progress}%'),
-                ],
-              ),
-              if (task.dependencies.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  '依赖任务: ${task.dependencies.length} 个',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetailChip(String label, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        '$label: $value',
-        style: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w500,
-          color: Color(0xFF2D3748),
-        ),
-      ),
-    );
+    // TODO: 实现删除任务逻辑
+    _showSnackBar('删除任务: ${task.title}');
   }
 
   // 应用连线模板
@@ -557,43 +443,12 @@ class _EnhancedWorkflowViewState extends State<EnhancedWorkflowView>
     }
   }
 
-  void _handleTaskDoubleTap(
-      EnhancedTaskNode task, EnhancedWorkflowProvider provider) {
-    if (widget.isEditable) {
-      _showEditTaskDialog(task, provider);
-    }
-  }
-
-  void _startDragging(String taskId) {
-    setState(() {
-      _draggingTaskId = taskId;
-      _dragOffset = Offset.zero;
-    });
-  }
-
-  void _updateDragging(Offset delta) {
-    setState(() {
-      _dragOffset = (_dragOffset ?? Offset.zero) + delta;
-    });
-  }
-
-  void _endDragging(
-      String taskId, EnhancedWorkflowProvider provider, Size canvasSize) {
-    if (_dragOffset != null) {
-      provider.updateTaskPosition(taskId, _dragOffset!, canvasSize: canvasSize);
-    }
-    setState(() {
-      _draggingTaskId = null;
-      _dragOffset = null;
-    });
-  }
-
   void _handleConnectionModeTask(
       EnhancedTaskNode task, EnhancedWorkflowProvider provider) {
     if (_connectionFromTaskId == null) {
       setState(() => _connectionFromTaskId = task.id);
     } else if (_connectionFromTaskId != task.id) {
-      provider.addTaskDependency(_connectionFromTaskId!, task.id);
+      // provider.addTaskDependency(_connectionFromTaskId!, task.id);
       setState(() => _connectionFromTaskId = null);
       _showSnackBar('已添加任务依赖关系');
     }
@@ -642,21 +497,31 @@ class _EnhancedWorkflowViewState extends State<EnhancedWorkflowView>
   void _showAddTaskDialog(EnhancedWorkflowProvider provider) {
     showDialog(
       context: context,
-      builder: (context) => AddTaskDialog(
-        onTaskAdded: (task) => provider.addTask(task),
+      builder: (context) => TaskEditDialog(
+        availableTasks: provider.allTasks,
       ),
-    );
+    ).then((result) {
+      if (result != null && result is EnhancedTaskNode) {
+        // provider.addTask(result);
+        _showSnackBar('已添加任务: ${result.title}');
+      }
+    });
   }
 
   void _showEditTaskDialog(
       EnhancedTaskNode task, EnhancedWorkflowProvider provider) {
     showDialog(
       context: context,
-      builder: (context) => EditTaskDialog(
+      builder: (context) => TaskEditDialog(
         task: task,
-        onTaskUpdated: (updatedTask) => provider.updateTask(updatedTask),
+        availableTasks: provider.allTasks,
       ),
-    );
+    ).then((result) {
+      if (result != null && result is EnhancedTaskNode) {
+        // provider.updateTask(result);
+        _showSnackBar('已更新任务: ${result.title}');
+      }
+    });
   }
 
   void _showSnackBar(String message) {
@@ -666,43 +531,5 @@ class _EnhancedWorkflowViewState extends State<EnhancedWorkflowView>
         duration: const Duration(seconds: 2),
       ),
     );
-  }
-
-  // 样式辅助方法
-  Color _getTaskColor(EnhancedTaskStatus status) {
-    switch (status) {
-      case EnhancedTaskStatus.pending:
-        return const Color(0xFFF6AD55);
-      case EnhancedTaskStatus.inProgress:
-        return const Color(0xFF4299E1);
-      case EnhancedTaskStatus.completed:
-        return const Color(0xFF48BB78);
-      case EnhancedTaskStatus.blocked:
-        return const Color(0xFFF56565);
-    }
-  }
-
-  IconData _getTaskIcon(EnhancedTaskStatus status) {
-    switch (status) {
-      case EnhancedTaskStatus.pending:
-        return Icons.schedule;
-      case EnhancedTaskStatus.inProgress:
-        return Icons.play_circle_filled;
-      case EnhancedTaskStatus.completed:
-        return Icons.check_circle;
-      case EnhancedTaskStatus.blocked:
-        return Icons.block;
-    }
-  }
-
-  String _getPriorityText(EnhancedTaskPriority priority) {
-    switch (priority) {
-      case EnhancedTaskPriority.low:
-        return '低';
-      case EnhancedTaskPriority.medium:
-        return '中';
-      case EnhancedTaskPriority.high:
-        return '高';
-    }
   }
 }

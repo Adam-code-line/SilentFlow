@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../models/user_model.dart';
 import '../../../models/team_pool_model.dart';
-import '../detail_widgets/team_members_list.dart';
+import '../../../widgets/team/team_members_list.dart';
 
 class TeamMembersTab extends StatelessWidget {
   final List<User> teamMembers;

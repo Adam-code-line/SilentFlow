@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../models/team_pool_model.dart';
 import '../../../models/task_model.dart';
-import '../detail_widgets/team_overview_card.dart';
-import '../detail_widgets/project_overview_card.dart';
+import '../../../widgets/team/team_overview_card.dart';
+import '../../../widgets/team/project_overview_card.dart';
 
 class TeamOverviewTab extends StatelessWidget {
   final TeamPool team;

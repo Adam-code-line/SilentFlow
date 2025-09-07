@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../providers/app_provider.dart';
 import '../../../providers/team_pool_provider.dart';
 import '../../../models/team_pool_model.dart';
-import '../widgets/team_card.dart';
+import '../../../widgets/team/team_card.dart';
 
 class MyTeamsTab extends StatelessWidget {
   final Function(TeamPool) onTeamTap;

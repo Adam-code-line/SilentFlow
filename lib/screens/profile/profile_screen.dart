@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/user_model.dart';
 import '../../providers/app_provider.dart';
-import '../../widgets/team_creation_dialog.dart';
+import '../../widgets/dialogs/team_creation_dialog.dart';
 import 'profile_detail_screen.dart';
 import 'profile_edit_screen.dart';
 

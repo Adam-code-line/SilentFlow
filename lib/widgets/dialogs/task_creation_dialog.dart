@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../models/task_model.dart';
-import '../models/task_template_model.dart';
-import '../models/team_pool_model.dart';
-import '../providers/app_provider.dart';
-import '../services/task_service.dart';
+import '../../models/task_model.dart';
+import '../../models/task_template_model.dart';
+import '../../models/team_pool_model.dart';
+import '../../providers/app_provider.dart';
+import '../../services/task_service.dart';
 
 class TaskCreationDialog extends StatefulWidget {
   final TeamPool? team;

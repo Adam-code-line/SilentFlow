@@ -6,7 +6,7 @@ import '../../models/user_model.dart';
 import '../../providers/app_provider.dart';
 import '../../services/user_service.dart';
 import '../../services/task_service.dart';
-import '../../widgets/task_creation_dialog.dart';
+import '../../widgets/dialogs/task_creation_dialog.dart';
 import 'detail_tabs/team_overview_tab.dart';
 import 'detail_tabs/team_project_tab.dart';
 import 'detail_tabs/team_members_tab.dart';

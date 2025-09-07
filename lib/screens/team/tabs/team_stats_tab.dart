@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import '../../../providers/app_provider.dart';
 import '../../../providers/team_pool_provider.dart';
 import '../../../models/task_model.dart' show TaskStatus;
-import '../widgets/stat_card.dart';
-import '../widgets/team_stats_card.dart';
+import '../../../widgets/team/stat_card.dart';
+import '../../../widgets/team/team_stats_card.dart';
 
 class TeamStatsTab extends StatelessWidget {
   const TeamStatsTab({super.key});

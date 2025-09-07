@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../models/team_template_model.dart';
-import '../providers/team_pool_provider.dart';
-import '../providers/app_provider.dart';
-import '../widgets/debug_info_dialog.dart';
+import '../../models/team_template_model.dart';
+import '../../providers/team_pool_provider.dart';
+import '../../providers/app_provider.dart';
+import 'debug_info_dialog.dart';
 import 'package:provider/provider.dart';
 
 class TeamCreationDialog extends StatefulWidget {

@@ -3,7 +3,10 @@ import 'package:provider/provider.dart';
 import '../../models/task_model.dart';
 import '../../services/task_service.dart';
 import '../../providers/team_pool_provider.dart';
-import '../../widgets/task_creation_dialog.dart';
+import '../../widgets/dialogs/task_creation_dialog.dart';
+import '../../widgets/task/task_info_card.dart';
+import '../../widgets/task/task_completion_stats.dart';
+import '../../widgets/task/child_tasks_list.dart';
 
 class TaskDetailScreen extends StatefulWidget {
   final Task task;
@@ -65,19 +68,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             icon: const Icon(Icons.edit),
             onPressed: _editTask,
           ),
-          PopupMenuButton<String>(
-            onSelected: _handleMenuAction,
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'status',
-                child: Text('更改状态'),
-              ),
-              const PopupMenuItem(
-                value: 'delete',
-                child: Text('删除任务'),
-              ),
-            ],
-          ),
         ],
       ),
       body: Container(
@@ -111,7 +101,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                         ),
                       ],
                     ),
-                    child: _buildTaskInfoCard(),
+                    child: TaskInfoCard(
+                      task: widget.task,
+                      onMenuAction: _handleMenuAction,
+                    ),
                   ),
 
                   // 完成统计卡片
@@ -130,7 +123,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           ),
                         ],
                       ),
-                      child: _buildCompletionStats(),
+                      child: TaskCompletionStats(stats: _completionStats),
                     ),
 
                   // 子任务列表
@@ -149,7 +142,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           ),
                         ],
                       ),
-                      child: _buildChildTasksList(),
+                      child: ChildTasksList(
+                        childTasks: _childTasks,
+                        isLoading: _isLoading,
+                        onTaskTap: _openChildTaskDetail,
+                      ),
                     ),
                   ),
                 ],
@@ -161,423 +158,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         child: const Icon(Icons.add),
       ),
     );
-  }
-
-  Widget _buildTaskInfoCard() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 标题和状态
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.task.title,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2D3748),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  if (widget.task.description != null)
-                    Text(
-                      widget.task.description!,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[600],
-                        height: 1.4,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            _buildStatusChip(widget.task.status),
-          ],
-        ),
-
-        const SizedBox(height: 20),
-
-        // 任务属性
-        Wrap(
-          spacing: 16,
-          runSpacing: 12,
-          children: [
-            _buildInfoItem(
-              Icons.flag,
-              '优先级',
-              widget.task.priority.displayName,
-              _getPriorityColor(widget.task.priority),
-            ),
-            _buildInfoItem(
-              Icons.access_time,
-              '预估时间',
-              '${widget.task.estimatedMinutes}分钟',
-              Colors.blue,
-            ),
-            _buildInfoItem(
-              Icons.schedule,
-              '层级',
-              _getTaskLevelText(widget.task.level),
-              Colors.purple,
-            ),
-            if (widget.task.expectedAt != null)
-              _buildInfoItem(
-                Icons.event,
-                '预期完成',
-                _formatDate(widget.task.expectedAt!),
-                Colors.orange,
-              ),
-          ],
-        ),
-
-        // 标签
-        if (widget.task.tags.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: widget.task.tags
-                .map((tag) => Chip(
-                      label: Text(tag),
-                      backgroundColor: Colors.blue.withOpacity(0.1),
-                      labelStyle: const TextStyle(color: Colors.blue),
-                    ))
-                .toList(),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildCompletionStats() {
-    final total = _completionStats['total'] ?? 0;
-    final completed = _completionStats['completed'] ?? 0;
-    final inProgress = _completionStats['inProgress'] ?? 0;
-    final pending = _completionStats['pending'] ?? 0;
-    final blocked = _completionStats['blocked'] ?? 0;
-
-    final completionRate = total > 0 ? (completed / total * 100).toInt() : 0;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              '完成进度',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2D3748),
-              ),
-            ),
-            Text(
-              '$completionRate%',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF48BB78),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-
-        // 进度条
-        LinearProgressIndicator(
-          value: total > 0 ? completed / total : 0,
-          backgroundColor: Colors.grey[300],
-          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF48BB78)),
-        ),
-        const SizedBox(height: 16),
-
-        // 统计数字
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _buildStatItem('总计', total, Colors.grey),
-            _buildStatItem('已完成', completed, const Color(0xFF48BB78)),
-            _buildStatItem('进行中', inProgress, const Color(0xFF4299E1)),
-            _buildStatItem('待处理', pending, const Color(0xFFED8936)),
-            if (blocked > 0)
-              _buildStatItem('受阻', blocked, const Color(0xFFE53E3E)),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildChildTasksList() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '子任务 (${_childTasks.length})',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D3748),
-                ),
-              ),
-              if (_childTasks.isNotEmpty)
-                TextButton.icon(
-                  onPressed: _addChildTask,
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text('添加'),
-                ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: _childTasks.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.task_alt,
-                        size: 64,
-                        color: Colors.grey[400],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        '暂无子任务',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      ElevatedButton.icon(
-                        onPressed: _addChildTask,
-                        icon: const Icon(Icons.add),
-                        label: const Text('添加子任务'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF667eea),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  itemCount: _childTasks.length,
-                  itemBuilder: (context, index) {
-                    return _buildChildTaskItem(_childTasks[index]);
-                  },
-                ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildChildTaskItem(Task childTask) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: ListTile(
-        onTap: () => _openChildTaskDetail(childTask),
-        leading: Icon(
-          _getStatusIcon(childTask.status),
-          color: _getStatusColor(childTask.status),
-        ),
-        title: Text(
-          childTask.title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (childTask.description != null)
-              Text(
-                childTask.description!,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Icon(Icons.schedule, size: 14, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text(
-                  '${childTask.estimatedMinutes}分钟',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Icon(Icons.flag,
-                    size: 14, color: _getPriorityColor(childTask.priority)),
-                const SizedBox(width: 4),
-                Text(
-                  childTask.priority.displayName,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        trailing: _buildStatusChip(childTask.status),
-      ),
-    );
-  }
-
-  Widget _buildStatusChip(TaskStatus status) {
-    return Chip(
-      label: Text(
-        _getStatusText(status),
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      backgroundColor: _getStatusColor(status).withOpacity(0.1),
-      labelStyle: TextStyle(color: _getStatusColor(status)),
-      side: BorderSide(
-        color: _getStatusColor(status).withOpacity(0.3),
-      ),
-    );
-  }
-
-  Widget _buildInfoItem(
-      IconData icon, String label, String value, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 16, color: color),
-        const SizedBox(width: 6),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
-            ),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatItem(String label, int count, Color color) {
-    return Column(
-      children: [
-        Text(
-          count.toString(),
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // 辅助方法
-  String _getStatusText(TaskStatus status) {
-    switch (status) {
-      case TaskStatus.pending:
-        return '待处理';
-      case TaskStatus.inProgress:
-        return '进行中';
-      case TaskStatus.completed:
-        return '已完成';
-      case TaskStatus.blocked:
-        return '受阻';
-    }
-  }
-
-  IconData _getStatusIcon(TaskStatus status) {
-    switch (status) {
-      case TaskStatus.pending:
-        return Icons.schedule;
-      case TaskStatus.inProgress:
-        return Icons.play_circle;
-      case TaskStatus.completed:
-        return Icons.check_circle;
-      case TaskStatus.blocked:
-        return Icons.block;
-    }
-  }
-
-  Color _getStatusColor(TaskStatus status) {
-    switch (status) {
-      case TaskStatus.pending:
-        return const Color(0xFFED8936);
-      case TaskStatus.inProgress:
-        return const Color(0xFF4299E1);
-      case TaskStatus.completed:
-        return const Color(0xFF48BB78);
-      case TaskStatus.blocked:
-        return const Color(0xFFE53E3E);
-    }
-  }
-
-  Color _getPriorityColor(TaskPriority priority) {
-    switch (priority) {
-      case TaskPriority.low:
-        return Colors.green;
-      case TaskPriority.medium:
-        return Colors.orange;
-      case TaskPriority.high:
-        return Colors.red;
-      case TaskPriority.urgent:
-        return Colors.red[800]!;
-    }
-  }
-
-  String _getTaskLevelText(TaskLevel level) {
-    switch (level) {
-      case TaskLevel.project:
-        return '项目';
-      case TaskLevel.task:
-        return '任务';
-      case TaskLevel.taskPoint:
-        return '任务点';
-    }
-  }
-
-  String _formatDate(DateTime date) {
-    return '${date.month}/${date.day} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
   }
 
   // 事件处理方法
@@ -720,5 +300,45 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         _loadTaskDetails(); // 如果子任务被修改或删除，重新加载
       }
     });
+  }
+
+  // 辅助方法
+  String _getStatusText(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.pending:
+        return '待处理';
+      case TaskStatus.inProgress:
+        return '进行中';
+      case TaskStatus.completed:
+        return '已完成';
+      case TaskStatus.blocked:
+        return '受阻';
+    }
+  }
+
+  IconData _getStatusIcon(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.pending:
+        return Icons.schedule;
+      case TaskStatus.inProgress:
+        return Icons.play_circle;
+      case TaskStatus.completed:
+        return Icons.check_circle;
+      case TaskStatus.blocked:
+        return Icons.block;
+    }
+  }
+
+  Color _getStatusColor(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.pending:
+        return const Color(0xFFED8936);
+      case TaskStatus.inProgress:
+        return const Color(0xFF4299E1);
+      case TaskStatus.completed:
+        return const Color(0xFF48BB78);
+      case TaskStatus.blocked:
+        return const Color(0xFFE53E3E);
+    }
   }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../config/app_config.dart';
+import '../../config/app_config.dart';
 
 /// 开发模式浮动按钮 - 仅在开发模式下显示
 class DeveloperModeFloatingButton extends StatelessWidget {

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import '../services/api_service.dart';
-import '../services/team_service.dart';
+import '../../services/api_service.dart';
+import '../../services/team_service.dart';
 
 class DebugInfoDialog extends StatefulWidget {
   const DebugInfoDialog({super.key});

@@ -1,8 +1,8 @@
 import 'dart:ui';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../../widgets/beautiful_dialogs.dart';
-import '../../widgets/team_creation_dialog.dart';
+import '../../widgets/dialogs/beautiful_dialogs.dart';
+import '../../widgets/dialogs/team_creation_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

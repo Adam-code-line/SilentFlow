@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/team_pool_provider.dart';
 import '../../../models/team_pool_model.dart';
-import '../widgets/public_team_card.dart';
+import '../../../widgets/team/public_team_card.dart';
 
 class DiscoverTeamsTab extends StatefulWidget {
   final Function(TeamPool) onJoinTeam;

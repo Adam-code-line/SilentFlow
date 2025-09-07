@@ -4,7 +4,7 @@ import '../../models/team_pool_model.dart';
 import '../../providers/app_provider.dart';
 import '../../providers/team_pool_provider.dart';
 import '../../providers/enhanced_workflow_provider.dart';
-import '../../widgets/workflow_graph/enhanced_workflow_view.dart';
+import '../../widgets/workflow/workflow_graph_widget.dart';
 
 /// 高级工作流图页面
 class WorkflowScreen extends StatefulWidget {
